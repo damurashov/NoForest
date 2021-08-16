@@ -2,6 +2,7 @@
 
 from generic import *
 import fnmatch
+from numpy import matmul
 
 
 def git_commit_files(commit_hash: str):
@@ -105,3 +106,49 @@ def git_get_files_modified(commit_from, commit_to):
 
 def git_get_files_added(commit_from, commit_to):
 	return _git_get_files_change_type(commit_from, commit_to, 'A')
+
+
+def _reachability_matrix(branches : list) -> list:
+	"""
+	:param branches: list of branch names
+	:return: square matrix denoting ancestry of branches
+	"""
+	mat = [[0] * len(branches) for _ in range(len(branches))]  # Stub, square matrix
+
+	# Establish reachability using git
+	for i, ibranch in enumerate(branches):
+		for j, jbranch in enumerate(branches):
+			if i != j:
+				mat[i][j] = int(git_is_ancestor(ibranch, jbranch))
+
+	return mat
+
+
+def _tree(reachability_matrix):
+	"""
+	:return: Transforms reachability_matrix to a spanning tree
+	"""
+	sz = len(reachability_matrix)
+
+	def clean_redundant_adjacencies(reach_iter):
+		for i in range(sz):
+			for j in range(sz):
+				if reachability_matrix[i][j] and reach_iter[i][j]:
+					reachability_matrix[i][j] = 0
+
+	n_iters = len(reachability_matrix)
+	rm_iter = reachability_matrix
+
+	for i in range(2, n_iters + 1):
+		rm_iter = matmul(reachability_matrix, rm_iter)
+		clean_redundant_adjacencies(rm_iter)
+
+	return reachability_matrix
+
+
+def tree(branches: list):
+	"""
+	:param branches: list of branch names
+	:return: Spanning tree matrix representative of branch topology.
+	"""
+	return _tree(_reachability_matrix(branches))

@@ -1,5 +1,8 @@
 # https://mermaid-js.github.io/mermaid/#/flowchart?id=flowcharts-basic-syntax
 
+from functools import reduce
+
+
 def _code_connection(src, dest):
 	return ' '.join(['\t', str(src), '-->', str(dest)])
 
@@ -18,7 +21,7 @@ def mrm_gen_graph(configuration, *pairs):
 	"""
 	header = _code_header(configuration)
 	graph = [_code_connection(*pair) for pair in pairs]
-	return '\n'.join([header] + graph)
+	return '\n'.join([header] + graph) + '\n\t' + '\n\t'.join(list(set(reduce(lambda a, b: a + b, pairs, ()))))
 
 
 if __name__ == "__main__":
